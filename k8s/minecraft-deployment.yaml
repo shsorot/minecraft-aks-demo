@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minecraft-server
+  namespace: default
+  labels:
+    app: minecraft-server
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: minecraft-server
+  template:
+    metadata:
+      labels:
+        app: minecraft-server
+    spec:
+      securityContext:
+        fsGroup: 1000
+      containers:
+      - name: minecraft
+        image: itzg/minecraft-server:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 25565
+          name: minecraft
+          protocol: TCP
+        - containerPort: 25575
+          name: rcon
+          protocol: TCP
+        env:
+        - name: EULA
+          value: "TRUE"
+        resources:
+          requests:
+            memory: "1.5Gi"
+            cpu: "500m"
+          limits:
+            memory: "3Gi"
+            cpu: "1500m"
+        volumeMounts:
+        - name: minecraft-data
+          mountPath: /data
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "if command -v mc-monitor >/dev/null 2>&1; then mc-monitor status --host localhost --port 25565; else nc -z localhost 25565; fi"
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 5
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "if command -v mc-monitor >/dev/null 2>&1; then mc-monitor status --host localhost --port 25565; else nc -z localhost 25565; fi"
+          initialDelaySeconds: 120
+          periodSeconds: 60
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 5
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - sh
+              - -c
+              - "if command -v mc-send-to-console >/dev/null 2>&1; then mc-send-to-console say 'Server is shutting down in 10 seconds!' && sleep 10 && mc-send-to-console stop; else echo 'Graceful shutdown not available'; fi"
+      volumes:
+      - name: minecraft-data
+        persistentVolumeClaim:
+          claimName: minecraft-pvc
+      restartPolicy: Always

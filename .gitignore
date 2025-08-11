@@ -1,0 +1,10 @@
+# Exclusions per user request
+.vscode/
+**/.vscode/
+# Copilot / chat related (defensive patterns)
+.copilot/
+*.copilot-chat.json
+.chat/
+# Node/Python temp (future-proof if added later)
+node_modules/
+__pycache__/
