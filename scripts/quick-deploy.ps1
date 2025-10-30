@@ -133,7 +133,7 @@ try {
                 --name $AksClusterName `
                 --location $Region `
                 --node-count 2 `
-                --node-vm-size Standard_D2s_v3 `
+                --node-vm-size Standard_D4s_v3 `
                 --kubernetes-version $KubernetesVersion `
                 --enable-addons monitoring `
                 --enable-cluster-autoscaler `

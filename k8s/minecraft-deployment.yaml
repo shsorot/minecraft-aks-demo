@@ -33,13 +33,17 @@ spec:
         env:
         - name: EULA
           value: "TRUE"
+        - name: MAX_PLAYERS
+          value: "64"
+        - name: MEMORY
+          value: "6G"
         resources:
           requests:
-            memory: "1.5Gi"
-            cpu: "500m"
+            memory: "4Gi"
+            cpu: "1000m"
           limits:
-            memory: "3Gi"
-            cpu: "1500m"
+            memory: "8Gi"
+            cpu: "3000m"
         volumeMounts:
         - name: minecraft-data
           mountPath: /data

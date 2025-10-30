@@ -8,6 +8,7 @@ The Minecraft on AKS demonstration repository has been fully optimized for exhib
 
 ### Current Deployment State
 - **External IP**: `40.127.222.166:25565` ✅ **CONSISTENT**
+- **Max Players**: 64 concurrent players
 - **Pod Status**: `minecraft-server-69575f547d-jjxhc` ✅ **RUNNING**
 - **Service Type**: LoadBalancer ✅ **STABLE**
 - **Storage**: Azure Files Premium ✅ **PERSISTENT**
