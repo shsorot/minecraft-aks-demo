@@ -55,7 +55,7 @@ The deployment script creates:
 
 🎮 Minecraft Server Details:
   Server Address: 40.127.222.166:25565
-  Max Players: 64
+  Max Players: 16
   Game Mode: Survival
 
 🔒 IP Consistency Guarantee:
@@ -162,12 +162,7 @@ kubectl get service minecraft-service
 kubectl top pods
 kubectl top nodes
 ```
-
-## 📊 Configuration Details
-
-### Azure Infrastructure
-
-- **VM Size**: Standard_D4s_v3 (4 vCPU, 16GB RAM) - optimized for 64 player capacity
+- **VM Size**: Standard_D2s_v3 (2 vCPU, 8GB RAM) - optimized for cost/performance
 - **Node Count**: 2 initial nodes, auto-scale 1-5 based on demand
 - **Storage**: Azure Files Premium 100GB with Premium_LRS redundancy
 - **Networking**: Azure CNI with network policies enabled
@@ -175,15 +170,11 @@ kubectl top nodes
 
 ### Minecraft Server Settings
 - **Edition**: Java Edition (latest)
-- **Max Players**: 64 concurrent players
+- **Max Players**: 16 concurrent players
 - **Game Mode**: Survival
 - **Difficulty**: Normal
 - **World Type**: Default with custom seed
 - **RCON**: Enabled on port 25575 for remote administration
-
-### Client Requirements
-- **Download Minecraft Java Edition**: [Free Trial Available](https://www.minecraft.net/en-us/free-trial)
-- **Compatibility**: Java Edition clients only (Bedrock not supported)
 
 ## 🧹 Cleanup
 
