@@ -1,15 +1,12 @@
-# 🚀 Quick Deploy Script for Exhibition - Azure CLI Version
-# This script creates AKS cluster and storage using Azure CLI commands
-# Converted from Bicep/ARM templates for better reliability and transparency
+# 🚀 Quick Deploy Script (Azure Container Storage Variant) - Azure CLI Version
+# This script creates an AKS cluster configured with Azure Container Storage (local NVMe)
+# It deploys the Minecraft demo workload using the local-csi driver storage class
 
 param(
     [string]$Prefix = "",
     [string]$Region = "northeurope",
     [string]$KubernetesVersion = "1.31.10"
 )
-
-# Initialize script-level variables
-$script:StorageAccount = $null
 
 # Error handling function
 function Test-AzureOperation {
@@ -78,13 +75,21 @@ Write-Host "==========================================================" -Foregro
 # Test prerequisites first
 Test-AzurePrerequisites
 
+# Ensure the k8s-extension is available (required for Azure Container Storage operations)
+Test-AzureOperation -OperationName "Ensuring 'k8s-extension' Azure CLI extension is installed" -Operation {
+    az extension add --upgrade --name k8s-extension --output none 2>$null
+} -ContinueOnError $true
+
 # Get prefix if not provided
 if (-not $Prefix) {
-    $Prefix = Read-Host "Enter a prefix for your resources (3-8 chars, lowercase letters/numbers only)"
-    if (-not $Prefix -or $Prefix.Length -lt 3 -or $Prefix.Length -gt 8 -or $Prefix -notmatch '^[a-z0-9]+$') {
-        Write-Host "❌ Invalid prefix. Must be 3-8 characters, lowercase letters and numbers only." -ForegroundColor Red
+    $Prefix = Read-Host "Enter a prefix for your resources (3-10 chars, lowercase letters/numbers only)"
+    if (-not $Prefix -or $Prefix.Length -lt 3 -or $Prefix.Length -gt 10 -or $Prefix -notmatch '^[a-z0-9]+$') {
+        Write-Host "❌ Invalid prefix. Must be 3-10 characters, lowercase letters and numbers only." -ForegroundColor Red
         exit 1
     }
+} elseif ($Prefix.Length -lt 3 -or $Prefix.Length -gt 10 -or $Prefix -notmatch '^[a-z0-9]+$') {
+    Write-Host "❌ Invalid prefix provided. Must be 3-10 characters, lowercase letters and numbers only." -ForegroundColor Red
+    exit 1
 }
 
 # Validate region
@@ -106,13 +111,11 @@ $ErrorActionPreference = "Stop"
 # Resource names
 $ResourceGroup = "rg-$Prefix-minecraft-aks-demo"
 $AksClusterName = "$Prefix-minecraft-aks"
-$storageAccountName = "$($Prefix)storage$((Get-Random -Maximum 999).ToString().PadLeft(3,'0'))"
 
 Write-Host ""
 Write-Host "📋 Resource Configuration:" -ForegroundColor Cyan
 Write-Host "  Resource Group: $ResourceGroup" -ForegroundColor White
 Write-Host "  AKS Cluster: $AksClusterName" -ForegroundColor White
-Write-Host "  Storage Account: $storageAccountName" -ForegroundColor White
 Write-Host "  Region: $Region" -ForegroundColor White
 Write-Host ""
 
@@ -133,12 +136,10 @@ try {
                 --name $AksClusterName `
                 --location $Region `
                 --node-count 2 `
-                --node-vm-size Standard_D4s_v3 `
+                --node-vm-size Standard_L16s_v3 `
                 --kubernetes-version $KubernetesVersion `
                 --enable-addons monitoring `
-                --enable-cluster-autoscaler `
-                --min-count 1 `
-                --max-count 5 `
+                --enable-azure-container-storage `
                 --network-plugin azure `
                 --network-policy azure `
                 --service-cidr "10.0.0.0/16" `
@@ -154,99 +155,14 @@ try {
     exit 1
 }
 
-# Step 3: Create Storage Account
-# Check for existing storage accounts with our prefix pattern
-Write-Host "🔍 Checking for existing storage accounts..." -ForegroundColor Yellow
-try {
-    $existingStorageJson = az storage account list --resource-group $ResourceGroup --query "[?starts_with(name,'$Prefix')]" --output json 2>$null
-    if ($LASTEXITCODE -eq 0 -and $existingStorageJson) {
-        $existingStorage = $existingStorageJson | ConvertFrom-Json
-        if ($existingStorage -and $existingStorage.Count -gt 0) {
-            $storageAccountName = $existingStorage[0].name
-            Write-Host "✅ Using existing storage account '$storageAccountName'" -ForegroundColor Green
-        } else {
-            $existingStorage = $null
-        }
-    } else {
-        $existingStorage = $null
-    }
-} catch {
-    Write-Host "⚠️ Warning: Could not check existing storage accounts: $_" -ForegroundColor Yellow
-    $existingStorage = $null
-}
-
-if (-not $existingStorage) {
-    Test-AzureOperation -OperationName "Creating Premium storage account '$storageAccountName'" -Operation {
-        az storage account create `
-            --resource-group $ResourceGroup `
-            --name $storageAccountName `
-            --location $Region `
-            --sku Premium_LRS `
-            --kind FileStorage `
-            --https-only true `
-            --min-tls-version TLS1_2 `
-            --tag "azd-env-name=rg-$Prefix-minecraft-aks-demo" `
-            --output none
-    }
-}
-
-# Step 4: Create File Share
-try {
-    $existingShareResult = az storage share exists --name "minecraft-data" --account-name $storageAccountName --query "exists" --output tsv 2>$null
-    $existingShare = ($LASTEXITCODE -eq 0 -and $existingShareResult -eq "true")
-} catch {
-    $existingShare = $false
-}
-
-if ($existingShare) {
-    Write-Host "✅ File share 'minecraft-data' already exists" -ForegroundColor Green
-} else {
-    Test-AzureOperation -OperationName "Creating file share 'minecraft-data'" -Operation {
-        az storage share create `
-            --name "minecraft-data" `
-            --account-name $storageAccountName `
-            --quota 100 `
-            --output none
-    }
-}
-
-# Step 5: Configure Storage Access Permissions
-$aksPrincipalId = Test-AzureOperation -OperationName "Retrieving AKS managed identity" -Operation {
-    $principalId = az aks show --resource-group $ResourceGroup --name $AksClusterName --query "identity.principalId" --output tsv
-    if (-not $principalId) {
-        throw "Failed to retrieve AKS managed identity principal ID"
-    }
-    return $principalId
-}
-
-$storageResourceId = Test-AzureOperation -OperationName "Retrieving storage account resource ID" -Operation {
-    $resourceId = az storage account show --resource-group $ResourceGroup --name $storageAccountName --query "id" --output tsv
-    if (-not $resourceId) {
-        throw "Failed to retrieve storage account resource ID"
-    }
-    return $resourceId
-}
-
-# Assign storage permissions
-Test-AzureOperation -OperationName "Assigning storage permissions to AKS managed identity" -Operation {
-    az role assignment create `
-        --assignee $aksPrincipalId `
-        --role "Contributor" `
-        --scope $storageResourceId `
-        --output none
-} -ContinueOnError $true
-
-# Store storage account name for later use
-$script:StorageAccount = $storageAccountName
-
 Write-Host "✅ All infrastructure created successfully!" -ForegroundColor Green
 
-# Step 6: Configure kubectl credentials
+# Step 3: Configure kubectl credentials
 Test-AzureOperation -OperationName "Configuring kubectl credentials" -Operation {
     az aks get-credentials --resource-group $ResourceGroup --name $AksClusterName --overwrite-existing --output none
 }
 
-# Step 7: Wait for nodes to be ready
+# Step 4: Wait for nodes to be ready
 Write-Host "⏳ Waiting for AKS nodes to be ready..." -ForegroundColor Yellow
 $maxAttempts = 40
 $attempt = 0
@@ -284,28 +200,19 @@ if (-not $nodesReady) {
     Write-Host "⚠️ Warning: Not all nodes ready after $maxAttempts attempts, but continuing..." -ForegroundColor Yellow
 }
 
-# Step 8: Apply Kubernetes manifests
+# Step 5: Apply Kubernetes manifests
 Write-Host "🚀 Deploying Minecraft to Kubernetes..." -ForegroundColor Yellow
 
-# First, create storage class for Azure Files
+# First, create storage class for Azure Container Storage (local NVMe)
 $storageClassYaml = @"
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: azure-file-premium
-provisioner: file.csi.azure.com
+  name: local
+provisioner: localdisk.csi.acstor.io
 allowVolumeExpansion: true
-parameters:
-  resourceGroup: $ResourceGroup
-  storageAccount: $storageAccountName
-  shareName: minecraft-data
-  protocol: nfs
-reclaimPolicy: Retain
-mountOptions:
-  - dir_mode=0755
-  - file_mode=0755
-  - uid=1000
-  - gid=1000
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
 "@
 
 $storageClassYaml | kubectl apply -f - 2>$null
@@ -317,7 +224,7 @@ if ($LASTEXITCODE -eq 0) {
 
 # Apply the main Kubernetes manifests
 $manifestFiles = @(
-    "k8s/minecraft-azfiles-pvc.yaml",
+    "k8s/minecraft-localnvme-pvc.yaml",
     "k8s/minecraft-deployment.yaml",
     "k8s/minecraft-service.yaml"
 )
@@ -371,7 +278,7 @@ try {
         Write-Host "========================================" -ForegroundColor Green
         Write-Host "📡 Server IP: $externalIP" -ForegroundColor White
         Write-Host "🔌 Port: 25565" -ForegroundColor White
-        Write-Host "� Connect to: $externalIP:25565" -ForegroundColor Cyan
+        Write-Host "-> Connect to: $externalIP:25565" -ForegroundColor Cyan
         Write-Host "========================================" -ForegroundColor Green
         Write-Host ""
     } else {
@@ -385,7 +292,6 @@ try {
 Write-Host ""
 Write-Host "🏗️ Infrastructure Created:" -ForegroundColor Cyan
 Write-Host "  AKS Cluster: $AksClusterName" -ForegroundColor White
-Write-Host "  Storage Account: $script:StorageAccount" -ForegroundColor White
 Write-Host "  Resource Group: $ResourceGroup" -ForegroundColor White
 Write-Host "  Region: $Region" -ForegroundColor White
 Write-Host ""

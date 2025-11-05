@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minecraft-pvc
+  namespace: default
+  annotations:
+    localdisk.csi.acstor.io/accept-ephemeral-storage: "true"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local
+  resources:
+    requests:
+      storage: 100Gi
