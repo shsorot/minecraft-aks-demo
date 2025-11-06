@@ -37,6 +37,10 @@ spec:
           value: "64"
         - name: MEMORY
           value: "6G"
+        # set the server to creative mode
+        # https://docker-minecraft-server.readthedocs.io/en/latest/configuration/server-properties/#game-mode
+        - name: MODE
+          value: "creative"
         resources:
           requests:
             memory: "4Gi"
