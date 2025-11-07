@@ -20,68 +20,76 @@ spec:
       securityContext:
         fsGroup: 1000
       containers:
-      - name: minecraft
-        image: itzg/minecraft-server:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 25565
-          name: minecraft
-          protocol: TCP
-        - containerPort: 25575
-          name: rcon
-          protocol: TCP
-        env:
-        - name: EULA
-          value: "TRUE"
-        - name: MAX_PLAYERS
-          value: "64"
-        - name: MEMORY
-          value: "6G"
-        # set the server to creative mode
-        # https://docker-minecraft-server.readthedocs.io/en/latest/configuration/server-properties/#game-mode
-        - name: MODE
-          value: "creative"
-        resources:
+        - name: minecraft
+          image: itzg/minecraft-server:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 25565
+              name: minecraft
+              protocol: TCP
+            - containerPort: 25575
+              name: rcon
+              protocol: TCP
+          env:
+            - name: EULA
+              value: "TRUE"
+            - name: MAX_PLAYERS
+              value: "64"
+            - name: MEMORY
+              value: "32G"
+            # set the server to creative mode
+            # https://docker-minecraft-server.readthedocs.io/en/latest/configuration/server-properties/#game-mode
+            - name: MODE
+              value: "creative"
+          # For Standard_D4s_v3 (4 vCPU, 16GB RAM)
+          # resources:
+          #   requests:
+          #     memory: "4Gi"
+          #     cpu: "1000m"
+          #   limits:
+          #     memory: "8Gi"
+          #     cpu: "3000m"
+          # For Standard_L16s_v3 (16 vCPU, 128GB RAM)
           requests:
-            memory: "4Gi"
-            cpu: "1000m"
+            cpu: "4000m"
+            memory: "16Gi"
           limits:
-            memory: "8Gi"
-            cpu: "3000m"
-        volumeMounts:
-        - name: minecraft-data
-          mountPath: /data
-        readinessProbe:
-          exec:
-            command:
-            - sh
-            - -c
-            - "if command -v mc-monitor >/dev/null 2>&1; then mc-monitor status --host localhost --port 25565; else nc -z localhost 25565; fi"
-          initialDelaySeconds: 30
-          periodSeconds: 5
-          timeoutSeconds: 1
-          successThreshold: 1
-          failureThreshold: 5
-        livenessProbe:
-          exec:
-            command:
-            - sh
-            - -c
-            - "if command -v mc-monitor >/dev/null 2>&1; then mc-monitor status --host localhost --port 25565; else nc -z localhost 25565; fi"
-          initialDelaySeconds: 120
-          periodSeconds: 60
-          timeoutSeconds: 5
-          successThreshold: 1
-          failureThreshold: 5
-        lifecycle:
-          preStop:
+            cpu: "12000m"
+            memory: "64Gi"
+          volumeMounts:
+            - name: minecraft-data
+              mountPath: /data
+          readinessProbe:
             exec:
               command:
-              - sh
-              - -c
-              - "if command -v mc-send-to-console >/dev/null 2>&1; then mc-send-to-console say 'Server is shutting down in 10 seconds!' && sleep 10 && mc-send-to-console stop; else echo 'Graceful shutdown not available'; fi"
+                - sh
+                - -c
+                - "if command -v mc-monitor >/dev/null 2>&1; then mc-monitor status --host localhost --port 25565; else nc -z localhost 25565; fi"
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 1
+            successThreshold: 1
+            failureThreshold: 5
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "if command -v mc-monitor >/dev/null 2>&1; then mc-monitor status --host localhost --port 25565; else nc -z localhost 25565; fi"
+            initialDelaySeconds: 120
+            periodSeconds: 60
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 5
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - sh
+                  - -c
+                  - "if command -v mc-send-to-console >/dev/null 2>&1; then mc-send-to-console say 'Server is shutting down in 10 seconds!' && sleep 10 && mc-send-to-console stop; else echo 'Graceful shutdown not available'; fi"
       volumes:
-      - name: minecraft-data
-        persistentVolumeClaim:
-          claimName: minecraft-pvc
+        - name: minecraft-data
+          persistentVolumeClaim:
+            claimName: minecraft-pvc
       restartPolicy: Always

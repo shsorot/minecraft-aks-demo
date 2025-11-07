@@ -207,7 +207,7 @@ try {
         kubectl delete service minecraft-service --ignore-not-found=true 2>$null
         kubectl delete pvc minecraft-pvc --ignore-not-found=true 2>$null
         kubectl delete configmap minecraft-config --ignore-not-found=true 2>$null
-        kubectl delete storageclass azurefile-premium --ignore-not-found=true 2>$null
+        kubectl delete storageclass azure-file-premium --ignore-not-found=true 2>$null
 
         Write-Host "✅ Kubernetes resources removed" -ForegroundColor Green
     } else {

@@ -5,6 +5,7 @@ A production-ready demonstration of deploying Minecraft Java Edition on Azure Ku
 ## ✨ Key Features
 
 ### 🔒 **Enterprise-Ready Infrastructure**
+
 - **Azure LoadBalancer**: External IP assignment with high availability
 - **Pod Failure Resilience**: Service remains accessible across pod restarts and failures
 - **Azure Files Premium**: High-performance persistent storage for world data
@@ -12,12 +13,14 @@ A production-ready demonstration of deploying Minecraft Java Edition on Azure Ku
 - **Azure Monitor Integration**: Built-in observability and monitoring
 
 ### 🚀 **Exhibition-Ready Deployment**
+
 - **One-Click Setup**: Single PowerShell script deploys complete infrastructure
 - **Comprehensive Error Handling**: Robust deployment with fail-fast validation
 - **Custom Resource Naming**: Easy tracking with prefix-based naming (`rg-{prefix}-minecraft-aks-demo`)
 - **Clean Teardown**: Simple resource cleanup with dedicated cleanup script
 
 ### 🎯 **Demo Features**
+
 - **Instant Connection Info**: Script displays server IP prominently upon completion
 - **Pod Resilience Testing**: Ready for live demonstrations of Kubernetes self-healing
 - **Real-time Monitoring**: Watch resource creation and pod status in real-time
@@ -25,11 +28,13 @@ A production-ready demonstration of deploying Minecraft Java Edition on Azure Ku
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Azure CLI installed and logged in (`az login`)
 - PowerShell 5.1+ (Windows) or PowerShell Core (Cross-platform)
 - Valid Azure subscription with AKS quota for Standard_D2s_v3 VMs
 
 ### Deploy Everything
+
 ```powershell
 # Clone and navigate to the repository
 git clone <repository-url>
@@ -40,7 +45,9 @@ cd minecraft-java-aks
 ```
 
 ### What Gets Created
+
 The deployment script creates:
+
 1. ✅ **Resource Group**: `rg-demo01-minecraft-aks-demo`
 2. ✅ **AKS Cluster**: `demo01-minecraft-aks` with auto-scaling (1-5 nodes)
 3. ✅ **Premium Storage**: Azure Files with 100GB quota for world persistence
@@ -49,13 +56,14 @@ The deployment script creates:
 6. ✅ **Monitoring**: Azure Monitor integration for observability
 
 ### Expected Output
+
 ```
 🎉 DEPLOYMENT SUCCESSFUL!
 ========================
 
 🎮 Minecraft Server Details:
   Server Address: 40.127.222.166:25565
-  Max Players: 64
+  Max Players: 16
   Game Mode: Survival
 
 🔒 IP Consistency Guarantee:
@@ -68,6 +76,7 @@ The deployment script creates:
 ## 🎭 Exhibition Demonstrations
 
 ### Pod Restart Resilience Demo
+
 ```powershell
 # Show current status
 kubectl get pods -l app=minecraft-server -o wide
@@ -84,12 +93,14 @@ Test-NetConnection -ComputerName 40.127.222.166 -Port 25565
 ```
 
 ### Automated Consistency Testing
+
 ```powershell
 # Run comprehensive IP consistency test
 .\scripts\test-ip-consistency.ps1
 ```
 
 ### Real-Time Monitoring
+
 ```powershell
 # Watch pod status during failures
 kubectl get pods -l app=minecraft-server -w
@@ -100,6 +111,7 @@ kubectl get service minecraft-service -w
 ## 📚 Project Structure
 
 ```
+
 minecraft-java-aks/
 ├── scripts/
 │   ├── quick-deploy.ps1      # Main deployment script
@@ -111,6 +123,7 @@ minecraft-java-aks/
 ├── README.md                       # This file
 ├── EXHIBITION_DEMO_GUIDE.md        # Exhibition demonstration guide
 └── EXHIBITION_STATUS.md            # Project status and features
+
 ```
 
 ## 🔧 Cleanup
@@ -126,6 +139,7 @@ When your demonstration is complete:
 ```
 
 The cleanup script will:
+
 - Remove Kubernetes resources (deployments, services, PVC)
 - Delete Azure resource groups (main and AKS-managed)
 - Clean up storage accounts and networking
@@ -163,37 +177,32 @@ kubectl top pods
 kubectl top nodes
 ```
 
-## 📊 Configuration Details
-
-### Azure Infrastructure
-
-- **VM Size**: Standard_D4s_v3 (4 vCPU, 16GB RAM) - optimized for 64 player capacity
+- **VM Size**: Standard_D2s_v3 (2 vCPU, 8GB RAM) - optimized for cost/performance
 - **Node Count**: 2 initial nodes, auto-scale 1-5 based on demand
 - **Storage**: Azure Files Premium 100GB with Premium_LRS redundancy
 - **Networking**: Azure CNI with network policies enabled
 - **Region**: North Europe (configurable via -Region parameter)
 
 ### Minecraft Server Settings
+
 - **Edition**: Java Edition (latest)
-- **Max Players**: 64 concurrent players
+- **Max Players**: 16 concurrent players
 - **Game Mode**: Survival
 - **Difficulty**: Normal
 - **World Type**: Default with custom seed
 - **RCON**: Enabled on port 25575 for remote administration
 
-### Client Requirements
-- **Download Minecraft Java Edition**: [Free Trial Available](https://www.minecraft.net/en-us/free-trial)
-- **Compatibility**: Java Edition clients only (Bedrock not supported)
-
 ## 🧹 Cleanup
 
 ### Complete Environment Cleanup
+
 ```powershell
 # Delete entire resource group (recommended)
 az group delete --name rg-demo01-minecraft-aks-demo --yes --no-wait
 ```
 
 ### List All Demo Resource Groups
+
 ```powershell
 # Find all Minecraft demo resource groups for bulk cleanup
 az group list --query "[?contains(name, 'minecraft-aks-demo')].name" --output table
@@ -204,6 +213,7 @@ az group list --query "[?contains(name, 'minecraft-aks-demo')].name" --output ta
 ### Common Issues
 
 **External IP not assigned**
+
 ```powershell
 # Check LoadBalancer status
 kubectl describe service minecraft-service
@@ -211,6 +221,7 @@ kubectl describe service minecraft-service
 ```
 
 **Pod won't start**
+
 ```powershell
 # Check pod status and events
 kubectl describe pod -l app=minecraft-server
@@ -218,6 +229,7 @@ kubectl get events --sort-by='.lastTimestamp'
 ```
 
 **Storage mounting issues**
+
 ```powershell
 # Verify persistent volume claim
 kubectl describe pvc minecraft-pvc

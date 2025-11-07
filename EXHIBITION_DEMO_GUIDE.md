@@ -1,9 +1,11 @@
 # 🎮 Exhibition Demo Guide: Pod Restart Resilience
 
 ## Overview
+
 This guide demonstrates how Kubernetes maintains service availability and IP consistency even when pods fail or restart while players are actively connected to the Minecraft server. This showcases enterprise-grade reliability patterns in a fun, interactive way.
 
 ## Prerequisites
+
 - ✅ Deployed Minecraft AKS cluster using `scripts/quick-deploy.ps1`
 - ✅ External IP assigned and accessible: `40.127.222.166:25565`
 - ✅ At least one player connected to the server
@@ -12,9 +14,11 @@ This guide demonstrates how Kubernetes maintains service availability and IP con
 ## Demo Scenario: "Resilient Gaming Experience"
 
 ### Phase 1: Establish Baseline
+
 **Audience Message**: *"Let's start by showing our running Minecraft server and establishing a baseline."*
 
 1. **Show Current Status**
+
    ```powershell
    # Display service information
    kubectl get service minecraft-service -o wide
@@ -29,11 +33,13 @@ This guide demonstrates how Kubernetes maintains service availability and IP con
 2. **Connect Players** (If available)
    - Have someone connect to `40.127.222.166:25565`
    - Show active player in server logs:
+
    ```powershell
    kubectl logs -l app=minecraft-server --tail=10
    ```
 
 3. **Record Initial State**
+
    ```powershell
    # Record current pod name
    $initialPod = kubectl get pods -l app=minecraft-server -o jsonpath='{.items[0].metadata.name}'
@@ -45,15 +51,18 @@ This guide demonstrates how Kubernetes maintains service availability and IP con
    ```
 
 ### Phase 2: Simulate Pod Failure
+
 **Audience Message**: *"Now let's simulate a pod failure - this could happen due to hardware issues, node maintenance, or resource constraints."*
 
 1. **Monitor in Real-Time** (Optional: Second Terminal)
+
    ```powershell
    # In separate terminal - watch pod status
    kubectl get pods -l app=minecraft-server -w
    ```
 
 2. **Simulate Failure**
+
    ```powershell
    # Delete the pod to simulate failure
    Write-Host "🔥 Simulating pod failure..." -ForegroundColor Red
@@ -63,6 +72,7 @@ This guide demonstrates how Kubernetes maintains service availability and IP con
    ```
 
 3. **Show Kubernetes Response**
+
    ```powershell
    # Watch the replacement happen
    kubectl get pods -l app=minecraft-server
@@ -72,9 +82,11 @@ This guide demonstrates how Kubernetes maintains service availability and IP con
    ```
 
 ### Phase 3: Verify Consistency
+
 **Audience Message**: *"The magic of Kubernetes - let's verify that our service remained consistent."*
 
 1. **Compare Pod Names**
+
    ```powershell
    # Get new pod name
    $newPod = kubectl get pods -l app=minecraft-server -o jsonpath='{.items[0].metadata.name}'
@@ -84,6 +96,7 @@ This guide demonstrates how Kubernetes maintains service availability and IP con
    ```
 
 2. **Verify IP Consistency**
+
    ```powershell
    # Check if IP remained the same
    $newIP = kubectl get service minecraft-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
@@ -98,6 +111,7 @@ This guide demonstrates how Kubernetes maintains service availability and IP con
    ```
 
 3. **Test Connectivity**
+
    ```powershell
    # Verify server is accessible
    Test-NetConnection -ComputerName $newIP -Port 25565
@@ -107,9 +121,11 @@ This guide demonstrates how Kubernetes maintains service availability and IP con
    ```
 
 ### Phase 4: Data Persistence Verification
+
 **Audience Message**: *"Let's verify that player progress and world data survived the pod restart."*
 
 1. **Check World Data Persistence**
+
    ```powershell
    # Show persistent volume status
    kubectl get pvc minecraft-pvc
@@ -126,6 +142,7 @@ This guide demonstrates how Kubernetes maintains service availability and IP con
 ### Phase 5: Advanced Demonstrations
 
 #### Multiple Failure Simulation
+
 **Audience Message**: *"Let's stress test this by failing the pod multiple times rapidly."*
 
 ```powershell
@@ -134,6 +151,7 @@ This guide demonstrates how Kubernetes maintains service availability and IP con
 ```
 
 #### Real-Time Monitoring
+
 **Audience Message**: *"In production, you'd want to monitor this. Let's see what that looks like."*
 
 ```powershell
@@ -150,18 +168,21 @@ kubectl get pods -l app=minecraft-server -o wide
 ## Talking Points for Exhibition
 
 ### Technical Benefits
+
 - **Zero Configuration**: LoadBalancer service automatically provides stable IP
 - **Automatic Recovery**: Kubernetes replaces failed pods without manual intervention
 - **Data Persistence**: Azure Files ensures world data survives pod restarts
 - **Horizontal Scaling**: Can easily scale to multiple pods for load distribution
 
 ### Business Benefits
+
 - **High Availability**: 99.9% uptime even with infrastructure failures
 - **Predictable Costs**: Azure managed services with transparent pricing
 - **Operational Simplicity**: Minimal maintenance overhead
 - **Disaster Recovery**: Built-in resilience patterns
 
 ### Enterprise Patterns Demonstrated
+
 - **Immutable Infrastructure**: Pods are cattle, not pets
 - **Service Discovery**: Consistent endpoints regardless of backend changes
 - **Health Monitoring**: Kubernetes automatically detects and replaces unhealthy pods
@@ -187,6 +208,7 @@ A: Azure Files provides built-in redundancy. You can also implement automated ba
 ## Troubleshooting During Demo
 
 ### If External IP Takes Too Long
+
 ```powershell
 # Check LoadBalancer provisioning
 kubectl describe service minecraft-service
@@ -196,6 +218,7 @@ az vm list-usage --location northeurope --query "[?name.value=='Total Regional v
 ```
 
 ### If Pod Won't Start
+
 ```powershell
 # Check pod status
 kubectl describe pod -l app=minecraft-server
@@ -208,6 +231,7 @@ kubectl describe pvc minecraft-pvc
 ```
 
 ### If Connectivity Fails
+
 ```powershell
 # Verify network security groups
 kubectl get service minecraft-service -o yaml
@@ -219,12 +243,14 @@ kubectl run test-pod --image=busybox --rm -it -- nc -zv minecraft-service 25565
 ## Demo Script Variations
 
 ### Quick Demo (5 minutes)
+
 1. Show running server
 2. Delete pod
 3. Show new pod with same IP
 4. Test connectivity
 
 ### Technical Deep Dive (15 minutes)
+
 1. Explain architecture
 2. Show monitoring tools
 3. Multiple failure simulation
@@ -232,12 +258,14 @@ kubectl run test-pod --image=busybox --rm -it -- nc -zv minecraft-service 25565
 5. Storage persistence verification
 
 ### Business-Focused (10 minutes)
+
 1. Cost comparison with traditional hosting
 2. Reliability guarantees
 3. Operational benefits
 4. Security and compliance features
 
 ## Success Metrics
+
 - ✅ Pod restart completes in under 60 seconds
 - ✅ External IP remains consistent across all restarts
 - ✅ Zero data loss demonstrated
