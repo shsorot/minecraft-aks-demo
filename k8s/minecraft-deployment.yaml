@@ -46,29 +46,22 @@ spec:
               value: "FALSE"
             - name: ENABLE_RCON
               value: "FALSE"
-            - name: WHITELIST
-              value: |
-                eh8t
-                BlindEyeball
-            - name: OPS
-              value: |
-                eh8t
             - name: SEED
               value: "-1909472536"
             # For Standard_D4s_v3 (4 vCPU, 16GB RAM)
-            # - name: MEMORY
-            #   value: "8G"
+            - name: MEMORY
+              value: "8G"
             # For Standard_L16s_v3 (16 vCPU, 128GB RAM)
             # - name: MEMORY
             #   value: "64G"
           # For Standard_D4s_v3 (4 vCPU, 16GB RAM)
-          # resources:
-          #   requests:
-          #     memory: "4Gi"
-          #     cpu: "1000m"
-          #   limits:
-          #     memory: "8Gi"
-          #     cpu: "2000m"
+          resources:
+            requests:
+              memory: "4Gi"
+              cpu: "1000m"
+            limits:
+              memory: "8Gi"
+              cpu: "2000m"
           # For Standard_L16s_v3 (16 vCPU, 128GB RAM)
           # resources:
           #   requests:

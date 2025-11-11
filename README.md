@@ -1,315 +1,130 @@
-# 🎮 Minecraft on Azure Kubernetes Service (AKS) - Exhibition Demo
-
-A production-ready demonstration of deploying Minecraft Java Edition on Azure Kubernetes Service with persistent storage, auto-scaling, and enterprise-grade reliability. Perfect for showcasing cloud-native capabilities at exhibitions and conferences.
-
-## ✨ Key Features
-
-### 🔒 **Enterprise-Ready Infrastructure**
-
-- **Azure LoadBalancer**: External IP assignment with high availability
-- **Pod Failure Resilience**: Service remains accessible across pod restarts and failures
-- **Dual Storage Options**: Azure Files Premium (default) or Azure Container Storage on node-local NVMe for ultra-low latency worlds
-- **AKS Auto-scaling**: Kubernetes cluster scales from 1-5 nodes when using Azure Files (NVMe deployments run on two fixed high-performance nodes)
-- **Azure Monitor Integration**: Built-in observability and monitoring
-
-### 🚀 **Exhibition-Ready Deployment**
-
-- **One-Click Setup**: Single PowerShell script deploys complete infrastructure
-- **Comprehensive Error Handling**: Robust deployment with fail-fast validation
-- **Custom Resource Naming**: Easy tracking with prefix-based naming (`rg-{prefix}-minecraft-aks-demo`)
-- **Clean Teardown**: Simple resource cleanup with dedicated cleanup script
-
-### 🎯 **Demo Features**
-
-- **Instant Connection Info**: Script displays server IP prominently upon completion
-- **Pod Resilience Testing**: Ready for live demonstrations of Kubernetes self-healing
-- **Real-time Monitoring**: Watch resource creation and pod status in real-time
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Azure CLI installed and logged in (`az login`)
-- PowerShell 5.1+ (Windows) or PowerShell Core (Cross-platform)
-- Valid Azure subscription with AKS quota for Standard_D2s_v3 VMs
-
-### Deploy Everything
-
-```powershell
-# Clone and navigate to the repository
-git clone <repository-url>
-cd minecraft-java-aks
-
-# Deploy with custom prefix (recommended for exhibitions)
-.\scripts\quick-deploy.ps1 -Prefix "demo01" -Region "northeurope"
-
-# Deploy with Azure Container Storage on NVMe
-.\scripts\quick-deploy.ps1 -Prefix "demo01" -Region "northeurope" -Storage "nvme"
-```
-
-### Choose Your Storage Backend
-
-- `-Storage files` (default): Creates Azure Files Premium share on Standard_D2s_v3 nodes with cluster autoscaler enabled (1-5 nodes). Best balance of cost, resilience, and simplicity.
-- `-Storage nvme`: Installs the Azure Container Storage extension, provisions Standard_L16s_v3 nodes with local NVMe, and deploys the Minecraft PVC using the `localdisk.csi.acstor.io` provisioner. Ideal for high-throughput demos; requires more capacity and keeps node count fixed at two.
-
-### What Gets Created
-
-The deployment script creates:
-
-1. ✅ **Resource Group**: `rg-demo01-minecraft-aks-demo`
-2. ✅ **AKS Cluster**: `demo01-minecraft-aks` (auto-scaling 1-5 nodes for Azure Files deployments, fixed two-node Standard_L16s_v3 for NVMe)
-3. ✅ **Premium Storage**: Azure Files with 100GB quota (default) or Azure Container Storage volumes backed by local NVMe when `-Storage nvme` is used
-4. ✅ **Kubernetes Resources**: Deployment, Service, PVC with optimized configuration
-5. ✅ **Load Balancer**: External IP for stable connectivity
-6. ✅ **Monitoring**: Azure Monitor integration for observability
-
-### Expected Output
-
-```
-🎉 DEPLOYMENT SUCCESSFUL!
-========================
-
-🎮 Minecraft Server Details:
-  Server Address: 40.127.222.166:25565
-  Max Players: 16
-  Game Mode: Survival
-
-🔒 IP Consistency Guarantee:
-  ✅ External IP (40.127.222.166) will remain consistent
-  ✅ IP persists across pod restarts, failures, and scaling
-  ✅ Azure LoadBalancer provides stable endpoint
-  ✅ World data persists on Azure Files Premium storage
-```
-
-## 🎭 Exhibition Demonstrations
-
-### Pod Restart Resilience Demo
-
-```powershell
-# Show current status
-kubectl get pods -l app=minecraft-server -o wide
-kubectl get service minecraft-service
-
-# Simulate pod failure
-kubectl delete pod -l app=minecraft-server
-
-# Verify IP consistency (should remain the same)
-kubectl get service minecraft-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
-
-# Test connectivity
-Test-NetConnection -ComputerName 40.127.222.166 -Port 25565
-```
-
-### Automated Consistency Testing
-
-```powershell
-# Run comprehensive IP consistency test
-.\scripts\test-ip-consistency.ps1
-```
-
-### Real-Time Monitoring
-
-```powershell
-# Watch pod status during failures
-kubectl get pods -l app=minecraft-server -w
-
-# Monitor service health
-kubectl get service minecraft-service -w
-
-## 📚 Project Structure
-
-```
-
-minecraft-java-aks/
-├── scripts/
-│   ├── quick-deploy.ps1      # Main deployment script
-│   └── cleanup.ps1           # Resource cleanup script
-├── k8s/
-│   ├── minecraft-deployment.yaml        # Kubernetes deployment
-│   ├── minecraft-service.yaml           # LoadBalancer service
-│   ├── minecraft-pvc-azurefiles.yaml    # PVC bound to Azure Files Premium
-│   └── minecraft-pvc-localnvme.yaml     # PVC bound to Azure Container Storage NVMe
-├── README.md                       # This file
-├── EXHIBITION_DEMO_GUIDE.md        # Exhibition demonstration guide
-└── EXHIBITION_STATUS.md            # Project status and features
-
-```
-
-## 🔧 Cleanup
-
-When your demonstration is complete:
-
-```powershell
-# Clean up all resources for a specific deployment
-.\scripts\cleanup.ps1 -Prefix "demo01"
-
-# Or list all Minecraft deployments first
-.\scripts\cleanup.ps1 -ListOnly
-```
-
-The cleanup script will:
-
-- Remove Kubernetes resources (deployments, services, PVC)
-- Delete Azure resource groups (main and AKS-managed)
-- Clean up storage accounts and networking
-- Wait for deletion completion before exiting
-
-## 🎯 Exhibition Tips
-
-1. **Pre-deployment**: Test the deployment in advance to ensure quota and permissions
-2. **Demonstration**: Use the pod restart demo to showcase Kubernetes self-healing
-3. **Monitoring**: Show Azure Monitor metrics during the demo
-4. **Cleanup**: Always run cleanup after demonstrations to avoid costs
-
-## 🔒 Security & Best Practices
-
-- **Managed Identity**: Uses Azure managed identity for secure access to storage
-- **Network Policies**: Azure CNI with network policies for security
-- **Resource Limits**: CPU and memory limits defined for all containers
-- **Health Checks**: Liveness and readiness probes configured
-- **Auto-scaling**: Cluster scales based on resource demands (1-5 nodes) for Azure Files deployments; NVMe runs two fixed high-performance nodes
-
-## 📊 Monitoring & Troubleshooting
-
-```powershell
-# Check pod status
-kubectl get pods -l app=minecraft-server
-
-# View server logs
-kubectl logs -l app=minecraft-server -f
-
-# Check service and external IP
-kubectl get service minecraft-service
-
-# View resource usage
-kubectl top pods
-kubectl top nodes
-```
-
-- **VM Size**: Standard_D2s_v3 (default) or Standard_L16s_v3 with local NVMe when `-Storage nvme` is selected
-- **Node Count**: Auto-scales 1-5 nodes (Azure Files) or fixed at 2 nodes (NVMe)
-- **Storage**: Azure Files Premium 100GB with Premium_LRS redundancy, or Azure Container Storage backed by node-local NVMe
-- **Networking**: Azure CNI with network policies enabled
-- **Region**: North Europe (configurable via -Region parameter)
-
-### Minecraft Server Settings
-
-- **Edition**: Java Edition (latest)
-- **Max Players**: 16 concurrent players
-- **Game Mode**: Survival
-- **Difficulty**: Normal
-- **World Type**: Default with custom seed
-
-## 🧹 Cleanup
-
-### Complete Environment Cleanup
-
-```powershell
-# Delete entire resource group (recommended)
-az group delete --name rg-demo01-minecraft-aks-demo --yes --no-wait
-```
-
-### List All Demo Resource Groups
-
-```powershell
-# Find all Minecraft demo resource groups for bulk cleanup
-az group list --query "[?contains(name, 'minecraft-aks-demo')].name" --output table
-```
-
-## 🔍 Troubleshooting
-
-### Common Issues
-
-**External IP not assigned**
-
-```powershell
-# Check LoadBalancer status
-kubectl describe service minecraft-service
-# Wait up to 10 minutes for Azure to provision the IP
-```
-
-**Pod won't start**
-
-```powershell
-# Check pod status and events
-kubectl describe pod -l app=minecraft-server
-kubectl get events --sort-by='.lastTimestamp'
-```
-
-**Storage mounting issues**
-
-```powershell
-# Verify persistent volume claim
-kubectl describe pvc minecraft-pvc
-# Check storage account permissions
-az role assignment list --scope /subscriptions/{subscription}/resourceGroups/{rg}
-```
-
-## 🧹 Resource Cleanup
-
-### Quick Cleanup by Prefix
-
-```bash
-# List all Minecraft demo deployments
-.\scripts\cleanup.ps1 -ListOnly
-
-# Clean up specific deployment (e.g., demo01)
-.\scripts\cleanup.ps1 -Prefix demo01
-
-# Clean up all Minecraft demos (with confirmation)
-.\scripts\cleanup.ps1 -Force
-
-# Keep managed resource group (advanced)
-.\scripts\cleanup.ps1 -Prefix demo01 -KeepManagedResourceGroup
-```
-
-### Manual Cleanup
-
-```bash
-# Delete specific resource group
-az group delete --name rg-{prefix}-minecraft-aks-demo --yes
-
-# List remaining resources
-az group list --query "[?contains(name, 'minecraft')]" --output table
-```
-
-### Performance Optimization
-
-- **More Players**: Scale deployment replicas or upgrade to larger VM sizes
-- **Better Performance**: Switch to Standard_D4s_v3 or Standard_D8s_v3 nodes
-- **High Availability**: Deploy across multiple availability zones
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Test your changes with `.\scripts\quick-deploy.ps1`
-4. Commit your changes: `git commit -m 'Add amazing feature'`
-5. Push to the branch: `git push origin feature/amazing-feature`
-6. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🎯 Exhibition Tips
-
-### Demo Success Factors
-
-- ✅ **Test beforehand**: Deploy and verify everything works in your target region
-- ✅ **Have backup plan**: Keep cleanup commands ready in case of issues
-- ✅ **Engage audience**: Let them connect to the server and see their progress persist
-- ✅ **Explain benefits**: Focus on business value, not just technical features
-- ✅ **Time management**: Full deployment takes 15-20 minutes, have a pre-deployed instance ready
-
-### Talking Points
-
-- **Cost Efficiency**: Pay only for what you use with auto-scaling
-- **Zero Downtime**: Demonstrate pod restart without service interruption
-- **Enterprise Security**: Managed identities, network policies, and Azure security integration
-- **Developer Experience**: From code to production in one command
-- **Operational Excellence**: Built-in monitoring, logging, and alerting
+<p align="center">
+  <img src="https://img.shields.io/badge/Minecraft%20on-Azure%20Kubernetes%20Service-0078D4?logo=microsoft-azure&logoColor=white" alt="Minecraft on AKS" />
+  <br>
+  <strong>Production-ready Minecraft Java Edition demo for exhibitions, hackathons, and executive briefings.</strong>
+  <br>
+  Persistent worlds • Live pod-failure demos • One command deploy
+</p>
+
+<p align="center">
+  <a href="https://learn.microsoft.com/azure/aks/"><img src="https://img.shields.io/badge/AKS-1.32.7-brightgreen?logo=kubernetes&logoColor=white" alt="AKS version" /></a>
+  <a href="https://learn.microsoft.com/powershell/"><img src="https://img.shields.io/badge/PowerShell-7+-blue?logo=powershell&logoColor=white" alt="PowerShell" /></a>
+  <a href="https://learn.microsoft.com/cli/azure/install-azure-cli"><img src="https://img.shields.io/badge/Azure%20CLI-2.63+-0078D4?logo=microsoft-azure&logoColor=white" alt="Azure CLI" /></a>
+  <img src="https://img.shields.io/github/stars/eh8/minecraft-aks-demo?style=flat&logo=github" alt="GitHub stars" />
+</p>
 
 ---
 
-**Ready to showcase cloud-native gaming infrastructure!** 🎮☁️
+## Highlights
+
+- 🎯 **One script to stage an entire AKS environment** (resource group, cluster, storage, Kubernetes manifests, monitoring)
+- 🔁 **Live pod failure and recovery demo** with guaranteed LoadBalancer IP consistency
+- 🗃️ **Dual storage backends**: Azure Files Premium (default) or Azure Container Storage on node-local NVMe
+- 📡 **Real-time observability** via Azure Monitor add-on and `kubectl` watchers
+- 🔐 **Enterprise guardrails**: Managed identity, network policies, resource limits, liveness/readiness probes
+- 🧹 **Fast cleanup** script for repeatable demos and cost control
+
+## Storage modes
+
+| Mode | Use when… | Node profile | Persistence | Extras |
+| --- | --- | --- | --- | --- |
+| `-Storage files` *(default)* | You want autoscaling, lower cost, simple operations | `Standard_D2s_v3`, autoscaler 1-5 nodes | Azure Files Premium share (100 GB) | Applies to all `EXHIBITION_*` guides
+| `-Storage nvme` | You need ultra-low latency or high TPS world edits | `Standard_L16s_v3`, fixed 2 nodes | Azure Container Storage backed by node-local NVMe | Installs ACS extension + local disk StorageClass
+
+> [!NOTE]
+> The exhibition guide currently covers only the Azure Files path. NVMe runs follow the same app flow but use different infrastructure commands.
+
+## Demo workflow at a glance
+
+1. **Deploy** `quick-deploy.ps1` with your prefix (≈15 minutes)
+2. **Share** the public IP shown at the end of the script with players/viewers
+3. **Demo** pod restarts, scaling, and log streaming using the commands below
+4. **Clean up** with `cleanup.ps1` or delete the resource group when finished
+
+## Getting started
+
+### Prerequisites
+
+- Azure subscription with AKS quota for the chosen VM size
+- Azure CLI logged in (`az login`)
+- PowerShell 5.1 (Windows) or PowerShell 7+ (macOS/Linux)
+
+### Deploy everything
+
+```powershell
+# Clone and enter the repo
+ git clone https://github.com/eh8/minecraft-aks-demo.git
+ cd minecraft-aks-demo
+
+# Azure Files (default)
+ .\scripts\quick-deploy.ps1 -Prefix "demo01" -Region "northeurope"
+
+# Azure Container Storage on NVMe
+ .\scripts\quick-deploy.ps1 -Prefix "demo01" -Region "northeurope" -Storage "nvme"
+```
+
+> [!TIP]
+> Prefix must be 3-10 lowercase alphanumerics and becomes part of every resource name (e.g., `rg-demo01-minecraft-aks-demo`).
+
+### What the script creates
+
+1. Resource group tagged for easy tracking
+2. AKS cluster (`demo01-minecraft-aks`): autoscaling 1-5 nodes (Files) or fixed 2×L16s_v3 (NVMe)
+3. Storage backend: Azure Files Premium share or Azure Container Storage (local NVMe disks)
+4. Kubernetes manifests (`k8s/`) for deployment, service, and storage class/PVC
+5. Monitoring: Azure Monitor addon plus helpful status output in the console
+
+## Verify the deployment
+
+```powershell
+# Confirm nodes and pods
+kubectl get nodes -o wide
+kubectl get pods -l app=minecraft-server -w
+
+# Capture LoadBalancer IP for players
+kubectl get service minecraft-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+
+# Tail server logs during the show
+kubectl logs -l app=minecraft-server -f
+```
+
+### Pod restart demo scriptlet
+
+```powershell
+$initialPod = kubectl get pod -l app=minecraft-server -o jsonpath='{.items[0].metadata.name}'
+$initialIP  = kubectl get service minecraft-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+
+kubectl delete pod -l app=minecraft-server
+kubectl rollout status deployment/minecraft-server --timeout=300s
+
+$newPod = kubectl get pod -l app=minecraft-server -o jsonpath='{.items[0].metadata.name}'
+$newIP  = kubectl get service minecraft-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+
+Write-Host "Pod changed: $initialPod -> $newPod" -ForegroundColor Green
+Write-Host "IP consistent: $initialIP" -ForegroundColor Green
+```
+
+## Useful commands
+
+```powershell
+# Automated IP consistency check
+.\scripts\test-ip-consistency.ps1
+
+# List all demo deployments before teardown
+.\scripts\cleanup.ps1 -ListOnly
+
+# Remove a specific prefix (deletes AKS + storage)
+.\scripts\cleanup.ps1 -Prefix "demo01"
+
+# Deep clean via Azure CLI (fallback)
+az group delete --name rg-demo01-minecraft-aks-demo --yes
+```
+
+## Troubleshooting Cheatsheet
+
+| Issue | What to check |
+| --- | --- |
+| LoadBalancer IP pending | `kubectl describe service minecraft-service` (allow up to 10 minutes) |
+| Pod stuck in `ContainerCreating` | `kubectl describe pod -l app=minecraft-server` for events; validate storage permissions |
+| Storage mount failures | `kubectl describe pvc minecraft-pvc*` and ensure the AKS managed identity has Contributor rights on the storage account |
+| `kubectl` cannot reach cluster | Re-run `az aks get-credentials --resource-group rg-<prefix>-minecraft-aks-demo --name <prefix>-minecraft-aks` |
