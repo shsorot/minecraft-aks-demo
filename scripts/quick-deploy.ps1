@@ -4,7 +4,7 @@
 
 param(
     [string]$Prefix = "",
-    [string]$Region = "eastus",
+    [string]$Region = "eastus2",
     [string]$KubernetesVersion = "1.32.7",
     [ValidateSet("files", "nvme")]
     [string]$Storage = "files"

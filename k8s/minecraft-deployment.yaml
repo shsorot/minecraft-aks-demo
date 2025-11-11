@@ -34,9 +34,7 @@ spec:
             - name: EULA
               value: "TRUE"
             - name: MAX_PLAYERS
-              value: "64"
-            - name: MEMORY
-              value: "32G"
+              value: "8"
             # set the server to creative mode
             # https://docker-minecraft-server.readthedocs.io/en/latest/configuration/server-properties/#game-mode
             - name: MODE
@@ -55,10 +53,12 @@ spec:
             - name: OPS
               value: |
                 eh8t
-            - name: SEED
-              value: "-1909472536"
+            # - name: SEED
+            #   value: "-1909472536"
             - name: WORLD
               value: "https://7565b563ac01.ngrok-free.app/imperial.zip"
+            - name: MEMORY
+              value: "64G"
           # For Standard_D4s_v3 (4 vCPU, 16GB RAM)
           # resources:
           #   requests:
@@ -68,12 +68,13 @@ spec:
           #     memory: "8Gi"
           #     cpu: "3000m"
           # For Standard_L16s_v3 (16 vCPU, 128GB RAM)
-          requests:
-            cpu: "4000m"
-            memory: "16Gi"
-          limits:
-            cpu: "12000m"
-            memory: "64Gi"
+          resources:
+            requests:
+              cpu: "4000m"
+              memory: "16Gi"
+            limits:
+              cpu: "12000m"
+              memory: "64Gi"
           volumeMounts:
             - name: minecraft-data
               mountPath: /data
