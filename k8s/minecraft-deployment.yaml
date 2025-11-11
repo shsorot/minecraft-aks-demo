@@ -27,9 +27,6 @@ spec:
             - containerPort: 25565
               name: minecraft
               protocol: TCP
-            - containerPort: 25575
-              name: rcon
-              protocol: TCP
           env:
             - name: EULA
               value: "TRUE"
@@ -42,23 +39,28 @@ spec:
             - name: VIEW_DISTANCE
               value: "32"
             - name: SPAWN_MONSTERS
-              value: "false"
+              value: "FALSE"
             - name: SPAWN_ANIMALS
-              value: "false"
+              value: "FALSE"
             - name: SPAWN_NPCS
-              value: "false"
+              value: "FALSE"
+            - name: ENABLE_RCON
+              value: "FALSE"
             - name: WHITELIST
               value: |
                 eh8t
+                BlindEyeball
             - name: OPS
               value: |
                 eh8t
-            # - name: SEED
-            #   value: "-1909472536"
-            - name: WORLD
-              value: "https://7565b563ac01.ngrok-free.app/imperial.zip"
-            - name: MEMORY
-              value: "64G"
+            - name: SEED
+              value: "-1909472536"
+            # For Standard_D4s_v3 (4 vCPU, 16GB RAM)
+            # - name: MEMORY
+            #   value: "8G"
+            # For Standard_L16s_v3 (16 vCPU, 128GB RAM)
+            # - name: MEMORY
+            #   value: "64G"
           # For Standard_D4s_v3 (4 vCPU, 16GB RAM)
           # resources:
           #   requests:
@@ -66,15 +68,15 @@ spec:
           #     cpu: "1000m"
           #   limits:
           #     memory: "8Gi"
-          #     cpu: "3000m"
+          #     cpu: "2000m"
           # For Standard_L16s_v3 (16 vCPU, 128GB RAM)
-          resources:
-            requests:
-              cpu: "4000m"
-              memory: "16Gi"
-            limits:
-              cpu: "12000m"
-              memory: "64Gi"
+          # resources:
+          #   requests:
+          #     cpu: "4000m"
+          #     memory: "16Gi"
+          #   limits:
+          #     cpu: "12000m"
+          #     memory: "64Gi"
           volumeMounts:
             - name: minecraft-data
               mountPath: /data

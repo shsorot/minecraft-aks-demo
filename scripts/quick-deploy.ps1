@@ -182,7 +182,7 @@ if ($LASTEXITCODE -eq 0 -and $existingClusterJson) {
         } else {
             $clusterArgs += @(
                 "--node-count", "2",
-                "--node-vm-size", "Standard_D2s_v3",
+                "--node-vm-size", "Standard_D2s_v5",
                 "--enable-cluster-autoscaler",
                 "--min-count", "1",
                 "--max-count", "5"

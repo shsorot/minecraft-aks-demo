@@ -8,8 +8,8 @@ A production-ready demonstration of deploying Minecraft Java Edition on Azure Ku
 
 - **Azure LoadBalancer**: External IP assignment with high availability
 - **Pod Failure Resilience**: Service remains accessible across pod restarts and failures
-- **Azure Files Premium**: High-performance persistent storage for world data
-- **AKS Auto-scaling**: Kubernetes cluster scales from 1-5 nodes based on demand
+- **Dual Storage Options**: Azure Files Premium (default) or Azure Container Storage on node-local NVMe for ultra-low latency worlds
+- **AKS Auto-scaling**: Kubernetes cluster scales from 1-5 nodes when using Azure Files (NVMe deployments run on two fixed high-performance nodes)
 - **Azure Monitor Integration**: Built-in observability and monitoring
 
 ### 🚀 **Exhibition-Ready Deployment**
@@ -42,15 +42,23 @@ cd minecraft-java-aks
 
 # Deploy with custom prefix (recommended for exhibitions)
 .\scripts\quick-deploy.ps1 -Prefix "demo01" -Region "northeurope"
+
+# Deploy with Azure Container Storage on NVMe
+.\scripts\quick-deploy.ps1 -Prefix "demo01" -Region "northeurope" -Storage "nvme"
 ```
+
+### Choose Your Storage Backend
+
+- `-Storage files` (default): Creates Azure Files Premium share on Standard_D2s_v3 nodes with cluster autoscaler enabled (1-5 nodes). Best balance of cost, resilience, and simplicity.
+- `-Storage nvme`: Installs the Azure Container Storage extension, provisions Standard_L16s_v3 nodes with local NVMe, and deploys the Minecraft PVC using the `localdisk.csi.acstor.io` provisioner. Ideal for high-throughput demos; requires more capacity and keeps node count fixed at two.
 
 ### What Gets Created
 
 The deployment script creates:
 
 1. ✅ **Resource Group**: `rg-demo01-minecraft-aks-demo`
-2. ✅ **AKS Cluster**: `demo01-minecraft-aks` with auto-scaling (1-5 nodes)
-3. ✅ **Premium Storage**: Azure Files with 100GB quota for world persistence
+2. ✅ **AKS Cluster**: `demo01-minecraft-aks` (auto-scaling 1-5 nodes for Azure Files deployments, fixed two-node Standard_L16s_v3 for NVMe)
+3. ✅ **Premium Storage**: Azure Files with 100GB quota (default) or Azure Container Storage volumes backed by local NVMe when `-Storage nvme` is used
 4. ✅ **Kubernetes Resources**: Deployment, Service, PVC with optimized configuration
 5. ✅ **Load Balancer**: External IP for stable connectivity
 6. ✅ **Monitoring**: Azure Monitor integration for observability
@@ -117,9 +125,10 @@ minecraft-java-aks/
 │   ├── quick-deploy.ps1      # Main deployment script
 │   └── cleanup.ps1           # Resource cleanup script
 ├── k8s/
-│   ├── minecraft-deployment.yaml   # Kubernetes deployment
-│   ├── minecraft-service.yaml      # LoadBalancer service
-│   └── minecraft-pvc.yaml          # Persistent volume claim
+│   ├── minecraft-deployment.yaml        # Kubernetes deployment
+│   ├── minecraft-service.yaml           # LoadBalancer service
+│   ├── minecraft-pvc-azurefiles.yaml    # PVC bound to Azure Files Premium
+│   └── minecraft-pvc-localnvme.yaml     # PVC bound to Azure Container Storage NVMe
 ├── README.md                       # This file
 ├── EXHIBITION_DEMO_GUIDE.md        # Exhibition demonstration guide
 └── EXHIBITION_STATUS.md            # Project status and features
@@ -158,7 +167,7 @@ The cleanup script will:
 - **Network Policies**: Azure CNI with network policies for security
 - **Resource Limits**: CPU and memory limits defined for all containers
 - **Health Checks**: Liveness and readiness probes configured
-- **Auto-scaling**: Cluster scales based on resource demands (1-5 nodes)
+- **Auto-scaling**: Cluster scales based on resource demands (1-5 nodes) for Azure Files deployments; NVMe runs two fixed high-performance nodes
 
 ## 📊 Monitoring & Troubleshooting
 
@@ -177,9 +186,9 @@ kubectl top pods
 kubectl top nodes
 ```
 
-- **VM Size**: Standard_D2s_v3 (2 vCPU, 8GB RAM) - optimized for cost/performance
-- **Node Count**: 2 initial nodes, auto-scale 1-5 based on demand
-- **Storage**: Azure Files Premium 100GB with Premium_LRS redundancy
+- **VM Size**: Standard_D2s_v3 (default) or Standard_L16s_v3 with local NVMe when `-Storage nvme` is selected
+- **Node Count**: Auto-scales 1-5 nodes (Azure Files) or fixed at 2 nodes (NVMe)
+- **Storage**: Azure Files Premium 100GB with Premium_LRS redundancy, or Azure Container Storage backed by node-local NVMe
 - **Networking**: Azure CNI with network policies enabled
 - **Region**: North Europe (configurable via -Region parameter)
 
@@ -190,7 +199,6 @@ kubectl top nodes
 - **Game Mode**: Survival
 - **Difficulty**: Normal
 - **World Type**: Default with custom seed
-- **RCON**: Enabled on port 25575 for remote administration
 
 ## 🧹 Cleanup
 

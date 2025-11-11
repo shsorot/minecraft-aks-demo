@@ -4,6 +4,8 @@
 
 This guide demonstrates how Kubernetes maintains service availability and IP consistency even when pods fail or restart while players are actively connected to the Minecraft server. This showcases enterprise-grade reliability patterns in a fun, interactive way.
 
+> **Note:** This exhibition flow applies to deployments created with the default Azure Files storage option (`-Storage files`). NVMe/Azure Container Storage runs follow different operational steps and are outside the scope of this guide.
+
 ## Prerequisites
 
 - ✅ Deployed Minecraft AKS cluster using `scripts/quick-deploy.ps1`
