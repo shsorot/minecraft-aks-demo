@@ -99,7 +99,7 @@ if (-not $Prefix) {
 Test-ResourcePrefix -Value $Prefix
 
 # Validate region
-$validRegions = @("eastus", "westus", "westus2", "centralus", "northeurope", "westeurope", "eastasia", "southeastasia", "australiaeast", "uksouth")
+$validRegions = @("eastus", "eastus2", "westus", "westus2", "centralus", "northeurope", "westeurope", "eastasia", "southeastasia", "australiaeast", "uksouth")
 if ($Region -notin $validRegions) {
     Write-Host " Warning: Region '$Region' may not be tested. Common regions: eastus, westus2, westeurope" -ForegroundColor Yellow
     $continue = Read-Host "Continue anyway? (yes/no)"
